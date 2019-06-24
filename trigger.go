@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"time"
 )
 
 func MakeBody(target_username, target_repo string) io.Reader {
@@ -27,13 +28,19 @@ func MakeBody(target_username, target_repo string) io.Reader {
 }
 
 func main() {
-	fmt.Println("Hello world")
 	travis_api_endpoint := "https://api.travis-ci.org"
 	target_username := "andrewrothstein"
 	target_repo := "go-trigger"
+	post_body := MakeBody(target_username, target_repo)
 	post_url := fmt.Sprintf("%s/repo/%s%%2F%s/requests", travis_api_endpoint, target_username, target_repo)
-	fmt.Printf("posting to %s...\n", post_url)
-	resp, err := http.Post(post_url, "application/json", MakeBody(target_username, target_repo))
+	log.Printf("posting to %s...\n", post_url)
+	req, err := http.NewRequest("POST", post_url, post_body)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Travis-API-Version", "3")
+
+	client := &http.Client{Timeout: time.Second * 10}
+	resp, err := client.Do(req)
 	if err != nil {
 		log.Fatalln(err)
 	}
